@@ -1,9 +1,15 @@
 #include "Utilities.h"
 #include "Game.h"
+#include "MyOpenCL.h"
+
 
 
 const Uint8 *keystate;
 SDL_Surface *image;
+
+
+
+
 int main(int argc, char* argv[])
 {
 	int i, j;
@@ -42,6 +48,8 @@ int main(int argc, char* argv[])
 	SDL_FreeSurface(image);
 	*/
 	Game_GetTexture(&texture, NULL, NULL, renderer, "res/circle64.png");
+	InitializeMyOpenCL();
+	LoadKernels();
 	Game_Init();
 	while (!quit)
 	{
@@ -89,5 +97,6 @@ int main(int argc, char* argv[])
 	SDL_DestroyWindow(window);
 	IMG_Quit();
 	SDL_Quit();
+	CleanUpMyOpenCL();
 	return 0;
 }

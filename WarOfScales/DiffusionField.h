@@ -1,11 +1,12 @@
 #pragma once
 #include "Point.h"
 #include "LinkedList.h"
+#include "MyOpenCL.h"
 
 #define MAX_PASSES_PER_UPDATE 100
-#define DIAGONAL_WEIGHT 0.10355339059327376220042218105242
+#define DIAGONAL_WEIGHT 0.10355339059327376220042218105242 //now part of kernels.cl
 //#define DIAGONAL_WEIGHT 0.14644660940672623779957781894758
-#define ADJACENT_WEIGHT 0.14644660940672623779957781894758
+#define ADJACENT_WEIGHT 0.14644660940672623779957781894758 //now part of kernels.cl
 #define DEFAULT_D 1
 typedef struct DiffusionField {
 	double *field, *D, *lambda, *next;
@@ -16,7 +17,18 @@ typedef struct DiffusionField {
 	NodeList* agents;
 } DiffusionField;
 SDL_Texture* dfieldtexture;
+SDL_Texture* dfieldnexttexture;
+size_t global_item_size;
+size_t local_item_size;
+cl_mem outputfield_memobj;
+cl_mem inputfield_memobj;
+cl_mem d_memobj;
+cl_mem lambda_memobj;
+cl_mem diffusable_memobj;
+cl_mem width_memobj;
+cl_mem height_memobj;
 
+void DiffusionField_Initialize();
 void DiffusionField_Init(DiffusionField* dfield);
 DiffusionField* DiffusionField_Create(Point* dim);
 void DiffusionField_Destroy(DiffusionField* dfield);

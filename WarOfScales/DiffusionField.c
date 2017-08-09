@@ -1,5 +1,9 @@
 #include "DiffusionField.h"
 
+void DiffusionField_Initialize()
+{
+
+}
 void DiffusionField_Init(DiffusionField* dfield)
 {
 	dfield->field = NULL;
@@ -53,9 +57,66 @@ void DiffusionField_Iterate(DiffusionField* dfield, int times)
 	int x, y, dx, dy;
 	int deltaptr;
 	double multiplier;
+	global_item_size = dfield->dim.x * dfield->dim.y;
+	local_item_size = dfield->dim.x;
+	outputfield_memobj = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+		dfield->dim.x * dfield->dim.y * sizeof(double), NULL, &ret);
+	CL_PRDEBUG
+	inputfield_memobj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			dfield->dim.x * dfield->dim.y * sizeof(double), NULL, &ret);
+	CL_PRDEBUG
+	d_memobj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			dfield->dim.x * dfield->dim.y * sizeof(double), NULL, &ret);
+	CL_PRDEBUG
+	lambda_memobj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			dfield->dim.x * dfield->dim.y * sizeof(double), NULL, &ret);
+	CL_PRDEBUG
+	diffusable_memobj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			dfield->dim.x * dfield->dim.y * sizeof(BOOLEAN), NULL, &ret);
+	CL_PRDEBUG
+	width_memobj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			sizeof(double), NULL, &ret);
+	CL_PRDEBUG
+	height_memobj = clCreateBuffer(context, CL_MEM_READ_ONLY,
+			sizeof(double), NULL, &ret);
+	CL_PRDEBUG
 	//double* next = malloc(sizeof(double) * dfield->dim.x * dfield->dim.y);
 	for (i = 0; i < times; i++)
 	{
+		ret = clEnqueueWriteBuffer(command_queue, inputfield_memobj, CL_TRUE, 0,
+			dfield->dim.x * dfield->dim.y * sizeof(double), dfield->field, 0, NULL, NULL);
+		CL_PRDEBUG
+		ret = clEnqueueWriteBuffer(command_queue, d_memobj, CL_TRUE, 0,
+			dfield->dim.x * dfield->dim.y * sizeof(double), dfield->D, 0, NULL, NULL);
+		CL_PRDEBUG
+		ret = clEnqueueWriteBuffer(command_queue, lambda_memobj, CL_TRUE, 0,
+			dfield->dim.x * dfield->dim.y * sizeof(double), dfield->lambda, 0, NULL, NULL);
+		CL_PRDEBUG
+		ret = clEnqueueWriteBuffer(command_queue, diffusable_memobj, CL_TRUE, 0,
+			dfield->dim.x * dfield->dim.y * sizeof(BOOLEAN), dfield->diffusable, 0, NULL, NULL);
+		CL_PRDEBUG
+		ret = clEnqueueWriteBuffer(command_queue, width_memobj, CL_TRUE, 0,
+			sizeof(double), &dfield->dim.x, 0, NULL, NULL);
+		CL_PRDEBUG
+		ret = clEnqueueWriteBuffer(command_queue, height_memobj, CL_TRUE, 0,
+			sizeof(double), &dfield->dim.y, 0, NULL, NULL);
+		CL_PRDEBUG
+
+		ret = clSetKernelArg(kernels[Diffuse], 0, sizeof(cl_mem), (void *)&outputfield_memobj); CL_PRDEBUG
+		ret = clSetKernelArg(kernels[Diffuse], 1, sizeof(cl_mem), (void *)&inputfield_memobj); CL_PRDEBUG
+		ret = clSetKernelArg(kernels[Diffuse], 2, sizeof(cl_mem), (void *)&d_memobj); CL_PRDEBUG
+		ret = clSetKernelArg(kernels[Diffuse], 3, sizeof(cl_mem), (void *)&lambda_memobj); CL_PRDEBUG
+		ret = clSetKernelArg(kernels[Diffuse], 4, sizeof(cl_mem), (void *)&diffusable_memobj); CL_PRDEBUG
+		ret = clSetKernelArg(kernels[Diffuse], 5, sizeof(cl_mem), (void *)&width_memobj); CL_PRDEBUG
+		ret = clSetKernelArg(kernels[Diffuse], 6, sizeof(cl_mem), (void *)&height_memobj);CL_PRDEBUG
+			
+		ret = clEnqueueNDRangeKernel(command_queue, kernels[Diffuse], 1, NULL,
+			&global_item_size, &local_item_size, 0, NULL, NULL);
+		CL_PRDEBUG
+		ret = clEnqueueReadBuffer(command_queue, outputfield_memobj, CL_TRUE, 0,
+			dfield->dim.x * dfield->dim.y * sizeof(double), dfield->next, 0, NULL, NULL);
+		CL_PRDEBUG
+		/*
 		for (ptr = 0; ptr < dfield->dim.x * dfield->dim.y; ptr++) //for each point on the field
 		{
 			//Point* p;
@@ -90,8 +151,16 @@ void DiffusionField_Iterate(DiffusionField* dfield, int times)
 			}
 			dfield->next[ptr] *= dfield->lambda[ptr];
 		}
+		*/
 		memcpy(dfield->field, dfield->next, sizeof(double) * dfield->dim.x * dfield->dim.y);
 	}
+	ret = clReleaseMemObject(outputfield_memobj);
+	ret = clReleaseMemObject(inputfield_memobj);
+	ret = clReleaseMemObject(d_memobj);
+	ret = clReleaseMemObject(lambda_memobj);
+	ret = clReleaseMemObject(diffusable_memobj);
+	ret = clReleaseMemObject(width_memobj);
+	ret = clReleaseMemObject(height_memobj);
 	//free(next);
 }
 void DiffusionField_SetArray(double* doubleArray, BOOLEAN* booleanArray, Point* dim, double value)
@@ -112,7 +181,14 @@ void DiffusionField_SetArray(double* doubleArray, BOOLEAN* booleanArray, Point* 
 		}
 	}
 }
-void DiffusionField_Clear(DiffusionField* dfield);
+void DiffusionField_Clear(DiffusionField* dfield)
+{
+	DiffusionField_SetArray(dfield->field, NULL, &dfield->dim, 0);
+	DiffusionField_SetArray(dfield->D, NULL, &dfield->dim, DEFAULT_D);
+	DiffusionField_SetArray(dfield->lambda, NULL, &dfield->dim, 1);
+	DiffusionField_SetArray(NULL, dfield->diffusable, &dfield->dim, TRUE);
+	NodeList_Clear(dfield->agents);
+}
 void DiffusionField_Scan(Point* output, DiffusionField* dfield, Point* pos, double radius);
 void DiffusionField_Point_MapToField(Point* output, DiffusionField* dfield, Point* in);
 void DiffusionField_Point_FieldToMap(Point* output, DiffusionField* dfield, Point* in);

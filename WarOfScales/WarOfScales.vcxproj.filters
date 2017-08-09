@@ -36,6 +36,9 @@
     <ClCompile Include="DiffusionField.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MyOpenCL.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="SDL2.lib">
@@ -48,6 +51,9 @@
       <Filter>Source Files</Filter>
     </Library>
     <Library Include="SDL2test.lib">
+      <Filter>Source Files</Filter>
+    </Library>
+    <Library Include="OpenCL.lib">
       <Filter>Source Files</Filter>
     </Library>
   </ItemGroup>
@@ -73,5 +79,13 @@
     <ClInclude Include="DiffusionField.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="MyOpenCL.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kernels.cl">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

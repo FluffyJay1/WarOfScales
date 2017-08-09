@@ -42,13 +42,14 @@ void Game_Init()
 		last = fuk;
 	}
 	//anim2->outline = TRUE;
-	fuck = DiffusionField_Create(&(Point) { WINDOW_WIDTH / 16, WINDOW_HEIGHT / 16, 0 });
-	fuck->field[DiffusionField_PointerArithmetic(&fuck->dim, &(Point){WINDOW_WIDTH / 32, WINDOW_HEIGHT / 32})] = 10000;
+	fuck = DiffusionField_Create(&(Point) { WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4, 0 });
+	fuck->field[DiffusionField_PointerArithmetic(&fuck->dim, &(Point){WINDOW_WIDTH / 8, WINDOW_HEIGHT / 8})] = 10000;
 	fuck->passesPerSec = 10;
 }
 void Game_LoadTextures(SDL_Renderer* renderer) //see if we can load everything at once
 {
 	Game_GetTexture(&dfieldtexture, NULL, NULL, renderer, "res/pixelwhite.png");
+	Game_GetTexture(&dfieldnexttexture, NULL, NULL, renderer, "res/pixelred.png");
 }
 void Game_AddUIElement(UIElement* element)
 {

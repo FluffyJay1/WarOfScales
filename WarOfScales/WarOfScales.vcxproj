@@ -86,10 +86,15 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\Programming\OpenCL\OpenCL SDK\6.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsC</CompileAs>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link />
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>D:\Programming\OpenCL\OpenCL SDK\6.3\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -112,11 +117,16 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\Programming\OpenCL\OpenCL SDK\6.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsC</CompileAs>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>D:\Programming\OpenCL\OpenCL SDK\6.3\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -124,11 +134,13 @@
     <ClCompile Include="Game.c" />
     <ClCompile Include="LinkedList.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="MyOpenCL.c" />
     <ClCompile Include="Point.c" />
     <ClCompile Include="UIElement.c" />
     <ClCompile Include="Utilities.c" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="OpenCL.lib" />
     <Library Include="SDL2.lib" />
     <Library Include="SDL2main.lib" />
     <Library Include="SDL2test.lib" />
@@ -139,9 +151,13 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="LinkedList.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="MyOpenCL.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="UIElement.h" />
     <ClInclude Include="Utilities.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kernels.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
