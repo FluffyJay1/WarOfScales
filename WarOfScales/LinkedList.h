@@ -2,12 +2,17 @@
 #include "Utilities.h"
 #include <stdio.h>
 #include <string.h>
+#define MEMBER_MAP(Y) \
+Y(UIElement) \
+Y(GameElement) \
+Y(DiffusionField)
+
 typedef struct Node
 {
 	int index, x, y, w, h;
 	double val; //mostly for debugging
 	struct Node *nextNode, *previousNode;
-	//remember to update Node_Destroy and Node_Copy and Node_Init
+	//remember to update member map
 	struct UIElement* UIElement;
 	struct GameElement* GameElement;
 	struct DiffusionField* DiffusionField;

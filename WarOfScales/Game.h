@@ -5,11 +5,12 @@
 #include "Point.h"
 #include "UIElement.h"
 #include "DiffusionField.h"
+#include "Camera.h"
+
+Camera camera;
 SDL_Point mousepos;
 Uint32 mousestate;
 NodeList UIElementList;
-Point CameraPos;
-double CameraScale;
 BOOLEAN Game_BreakLoop;
 BOOLEAN Game_BreakMouse;
 void Game_Init();

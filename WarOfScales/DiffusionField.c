@@ -15,7 +15,8 @@ void DiffusionField_Init(DiffusionField* dfield)
 	dfield->passTimer = 0;
 	dfield->iterationsPerPass = 1;
 	dfield->dim = *Point_Create(0, 0, 0);
-	dfield->fielddim = *Point_Create(0, 0, 0);
+	dfield->mapdim = *Point_Create(0, 0, 0);
+	dfield->pos = *Point_Create(0, 0, 0);
 	dfield->agents = NodeList_Create();
 }
 DiffusionField* DiffusionField_Create(Point* dim)
@@ -37,7 +38,11 @@ DiffusionField* DiffusionField_Create(Point* dim)
 void DiffusionField_Destroy(DiffusionField* dfield)
 {
 	free(dfield->field);
+	free(dfield->D);
+	free(dfield->lambda);
+	free(dfield->next);
 	free(dfield->diffusable);
+	NodeList_Clear(dfield->agents);
 	free(dfield);
 }
 void DiffusionField_Update(DiffusionField* dfield, double frametime)
@@ -189,9 +194,41 @@ void DiffusionField_Clear(DiffusionField* dfield)
 	DiffusionField_SetArray(NULL, dfield->diffusable, &dfield->dim, TRUE);
 	NodeList_Clear(dfield->agents);
 }
-void DiffusionField_Scan(Point* output, DiffusionField* dfield, Point* pos, double radius);
-void DiffusionField_Point_MapToField(Point* output, DiffusionField* dfield, Point* in);
-void DiffusionField_Point_FieldToMap(Point* output, DiffusionField* dfield, Point* in);
+void DiffusionField_Scan(Point* output, DiffusionField* dfield, Point* pos, double radius)
+{
+	int dx, dy;
+	double largestVal = 0;
+	Point largestPos;
+	Point_Copy(&largestPos, pos);
+	for (dx = -radius; dx <= radius; dx++)
+	{
+		for (dy = -radius; dy <= radius; dy++)
+		{
+			if (dx * dx + dy * dy <= radius * radius)
+			{
+				Point p = (Point) { dx + pos->x, dy + pos->y, 0 };
+				if(Point_IsInside2D(&dfield->dim, &p) && dfield->field[DiffusionField_PointerArithmetic(&dfield->dim, &p)] > largestVal)
+				{
+					Point_Copy(&largestPos, &p);
+					largestVal = dfield->field[DiffusionField_PointerArithmetic(&dfield->dim, &p)];
+				}
+			}
+		}
+	}
+	Point_Copy(output, &largestPos);
+}
+void DiffusionField_Point_MapToField(Point* output, DiffusionField* dfield, Point* in)
+{
+	output->x = (int)((in->x - dfield->pos.x) * dfield->dim.x / dfield->mapdim.x);
+	output->y = (int)((in->y - dfield->pos.y) * dfield->dim.y / dfield->mapdim.y);
+	output->z = in->z;
+}
+void DiffusionField_Point_FieldToMap(Point* output, DiffusionField* dfield, Point* in)
+{
+	output->x = in->x * dfield->mapdim.x / dfield->dim.x + dfield->pos.x;
+	output->y = in->y * dfield->mapdim.y / dfield->dim.y + dfield->pos.y;
+	output->z = in->z;
+}
 inline int DiffusionField_PointerArithmetic(Point* dim, Point* pos)
 {
 	return pos->y * dim->x + pos->x;
@@ -201,7 +238,7 @@ inline void DiffusionField_ArithmeticPointer(int* outx, int* outy, Point* dim, i
 	*outx = ptr % Round(dim->x);
 	*outy = (int)(ptr / dim->x);
 }
-void DiffusionField_Draw(SDL_Renderer* renderer, DiffusionField* dfield)
+void DiffusionField_Draw(SDL_Renderer* renderer, DiffusionField* dfield, Camera* camera)
 {
 	int x, y;
 	for (x = 0; x < dfield->dim.x; x++)
@@ -211,10 +248,10 @@ void DiffusionField_Draw(SDL_Renderer* renderer, DiffusionField* dfield)
 			SDL_Rect dstrect;
 			double val = dfield->field[DiffusionField_PointerArithmetic(&dfield->dim, &(Point){ x, y, 0 })];
 			double alpha = val != 0 ? 255. * (1. - pow(1.1, -val)) : 0;
-			dstrect.x = x * WINDOW_WIDTH / dfield->dim.x;
-			dstrect.y = y * WINDOW_HEIGHT / dfield->dim.y;
-			dstrect.w = WINDOW_WIDTH / dfield->dim.x;
-			dstrect.h = WINDOW_HEIGHT / dfield->dim.y;
+			dstrect.x = (x * dfield->mapdim.x / dfield->dim.x - camera->pos.x) * camera->scale + WINDOW_WIDTH/2;
+			dstrect.y = (y * dfield->mapdim.y / dfield->dim.y - camera->pos.y) * camera->scale + WINDOW_HEIGHT/2;
+			dstrect.w = dfield->mapdim.x / dfield->dim.x * camera->scale;
+			dstrect.h = dfield->mapdim.y / dfield->dim.y * camera->scale;
 			SDL_SetTextureAlphaMod(dfieldtexture, alpha);
 			SDL_SetTextureColorMod(dfieldtexture, alpha, alpha, alpha);
 			SDL_RenderCopy(renderer, dfieldtexture, NULL, &dstrect);

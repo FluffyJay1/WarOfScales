@@ -39,6 +39,9 @@
     <ClCompile Include="MyOpenCL.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="SDL2.lib">
@@ -80,6 +83,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="MyOpenCL.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameElement.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

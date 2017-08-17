@@ -26,6 +26,7 @@ void UIElement_Init(UIElement* element)
 	element->children = malloc(sizeof(NodeList));
 	NodeList_Init(element->children);
 	element->parent = NULL;
+	element->GameElement = NULL;
 	element->texture = NULL;
 	element->path = NULL;
 }

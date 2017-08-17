@@ -2,6 +2,7 @@
 #include "Point.h"
 #include "LinkedList.h"
 #include "MyOpenCL.h"
+#include "Camera.h"
 
 #define MAX_PASSES_PER_UPDATE 100
 #define DIAGONAL_WEIGHT 0.10355339059327376220042218105242 //now part of kernels.cl
@@ -13,7 +14,7 @@ typedef struct DiffusionField {
 	BOOLEAN* diffusable;
 	double passesPerSec, passTimer;
 	int iterationsPerPass;
-	Point dim, fielddim;
+	Point dim, mapdim, pos;
 	NodeList* agents;
 } DiffusionField;
 SDL_Texture* dfieldtexture;
@@ -41,4 +42,4 @@ void DiffusionField_Point_MapToField(Point* output, DiffusionField* dfield, Poin
 void DiffusionField_Point_FieldToMap(Point* output, DiffusionField* dfield, Point* in);
 inline int DiffusionField_PointerArithmetic(Point* dim, Point* pos);
 inline void DiffusionField_ArithmeticPointer(int* outx, int* outy, Point* dim, int ptr);
-void DiffusionField_Draw(SDL_Renderer* renderer, DiffusionField* field);
+void DiffusionField_Draw(SDL_Renderer* renderer, DiffusionField* field, Camera* camera);

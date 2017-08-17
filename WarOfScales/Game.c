@@ -16,8 +16,8 @@ void Game_Init()
 	UIElement *anim = UIElement_Create(Basic, button + draggable + circular, Point_Create(800, 450, 0), Point_Create(200, 200, 0), "res/anim(2x2).png");
 	UIElement *anim2 = UIElement_Create(Basic, button + circular, Point_Create(800, 850, 0), Point_Create(200, 200, 0), "res/anim(2x2).png");
 	UIElement* last = anim;
-	CameraPos = *Point_Create(0, 0, 0);
-	CameraScale = 1;
+	camera.pos = *Point_Create(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, 0);
+	camera.scale = 1;
 	Game_BreakLoop = FALSE;
 	Game_BreakMouse = FALSE;
 	NodeList_Init(&UIElementList);
@@ -43,6 +43,7 @@ void Game_Init()
 	}
 	//anim2->outline = TRUE;
 	fuck = DiffusionField_Create(&(Point) { WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4, 0 });
+	fuck->mapdim = *Point_Create(WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 	fuck->field[DiffusionField_PointerArithmetic(&fuck->dim, &(Point){WINDOW_WIDTH / 8, WINDOW_HEIGHT / 8})] = 10000;
 	fuck->passesPerSec = 10;
 }
@@ -176,7 +177,32 @@ void Game_Update(double frametime, Uint8 *keystate)
 		UIElement_Update(temp->UIElement, frametime);
 		temp = temp->nextNode;
 	}
-	DiffusionField_Update(fuck, frametime);
+	DiffusionField_Update(fuck, frametime); //AAAAAAAAAAAAAAAAAA
+	if (keystate[SDL_SCANCODE_W])
+	{
+		camera.pos.y -= frametime * 100;
+	}
+	if (keystate[SDL_SCANCODE_S])
+	{
+		camera.pos.y += frametime * 100;
+	}
+	if (keystate[SDL_SCANCODE_A])
+	{
+		camera.pos.x -= frametime * 100;
+	}
+	if (keystate[SDL_SCANCODE_D])
+	{
+		camera.pos.x += frametime * 100;
+	}
+	if (keystate[SDL_SCANCODE_UP])
+	{
+		camera.scale += frametime;
+	}
+	if (keystate[SDL_SCANCODE_DOWN])
+	{
+		camera.scale -= frametime;
+	}
+	
 }
 void Game_UpdateReverse(Uint8 *keystate)
 {
@@ -209,13 +235,26 @@ void Game_UpdateLastPos()
 void Game_Draw(SDL_Renderer* renderer)
 {
 	Node* temp = UIElementList.headNode;
+	Point c, coll;
+	Line *m, *o;
 	while (temp != NULL)
 	{
 		UIElement_Draw(renderer, temp->UIElement);
 		temp = temp->nextNode;
 	}
-	DiffusionField_Draw(renderer, fuck);
-	//DrawLine(renderer, (SDL_Point) { 50, 50 }, cursor, 2, (SDL_Color) { 255, 255, 0, 255 });
+	DiffusionField_Draw(renderer, fuck, &camera);
+	DrawLine(renderer, (SDL_Point) { 50, 50 }, mousepos, 2, (SDL_Color) { 255, 255, 0, 255 });
+	DrawLine(renderer, (SDL_Point) { 500, 300 }, (SDL_Point) { 500, 400 }, 2, (SDL_Color) { 255, 255, 0, 255 });
+
+	SDL_Point_to_Point(&c, &mousepos);
+	m = Line_Create(&(Point) { 50, 50, 0 }, &c);
+	o = Line_Create(&(Point) { 500, 300, 0 }, &(Point){500, 400, 0});
+	if (Line_Collides(&coll, m, o))
+	{
+		DrawCircle(renderer, (SDL_Point) { coll.x, coll.y}, 10, (SDL_Color) { 255, 0, 0, 255 });
+	}
+	free(m);
+	free(o);
 }
 void Game_HandleEvent(SDL_Event* event)
 {

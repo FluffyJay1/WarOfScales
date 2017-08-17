@@ -2,10 +2,19 @@
 #include "Utilities.h"
 #include <malloc.h>
 #define Vector Point
-typedef struct Point
-{
+#define Polygon PointArray
+typedef struct Point {
 	double x, y, z;
 }Point;
+typedef struct PointArray {
+	Point* points;
+	int size;
+}PointArray;
+typedef struct Line { //idk why i'm making this a struct someone send help
+	Point p1, p2;
+	double slope, length, bound_up, bound_down, bound_left, bound_right;
+	BOOLEAN p1right, p1down, vertical;
+}Line;
 
 void Point_Init(Point* p);
 inline Point* Point_Create(double x, double y, double z);
@@ -18,7 +27,15 @@ void Point_Dot(double* output, Point* p1, Point* p2);
 void Point_Cross(Point* output, Point* p1, Point* p2);
 BOOLEAN SDL_Point_IsEqual(SDL_Point* left, SDL_Point* right);
 BOOLEAN Point_IsEqual(Point* left, Point* right);
+BOOLEAN Point_IsInside2D(Point* dim, Point* p);
 double SDL_Point_Length(SDL_Point* p1, SDL_Point* p2);
 double Point_Length(Point* p1, Point* p2);
 double Point_Magnitude(Point* p);
 void Point_Print(Point* p);
+
+inline PointArray* PointArray_Create(int size);
+void PointArray_Destroy(PointArray* pa);
+void PointArray_GetLine(Line* out, PointArray* pa, int lineindex);
+
+inline Line* Line_Create(Point* p1, Point* p2);
+BOOLEAN Line_Collides(Point* out, Line* l1, Line* l2);

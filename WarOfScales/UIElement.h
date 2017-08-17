@@ -5,7 +5,7 @@
 #include "Point.h"
 #include <malloc.h>
 
-enum ElementClass
+enum UIElementClass
 {
 	Basic,
 	//main menu
@@ -14,7 +14,7 @@ enum ElementClass
 	ControlsButton,
 	QuitButton,
 };
-enum ElementFlags
+enum UIElementFlags
 {
 	visible = 1,
 	active = 2,
@@ -35,6 +35,7 @@ typedef struct UIElement
 	SDL_Texture* texture;
 	struct UIElement* parent;
 	NodeList* children;
+	struct GameElement* GameElement;
 }UIElement;
 
 void UIElement_Init(UIElement* element);

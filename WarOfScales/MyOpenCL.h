@@ -6,7 +6,8 @@
 #define CL_PRDEBUG //if(DEBUG)printf("ret at %d is %d\n", __LINE__, ret);
 
 #define KERNEL_MAP(X) \
-X(Diffuse, "diffuse") 
+X(Diffuse, "diffuse") \
+X(LineCollision, "linecollision")
 
 #define X(k, v) k,
 enum KernelType

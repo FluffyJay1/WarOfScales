@@ -221,9 +221,9 @@ void Node_Copy(Node* output, Node* input)
 void Node_Destroy(Node* node)
 {
 	//TODO update this shit
-	free(node->UIElement);
-	free(node->GameElement);
-	free(node->DiffusionField);
+#define Y(k) if(node->k != NULL) { free(node->k); node->k = NULL;}
+	MEMBER_MAP(Y)
+#undef Y
 	free(node);
 }
 void Node_Init(Node* node)
@@ -237,9 +237,9 @@ void Node_Init(Node* node)
 	node->h = 0;
 	node->nextNode = NULL;
 	node->previousNode = NULL;
-	node->UIElement = NULL;
-	node->GameElement = NULL;
-	node->DiffusionField = NULL;
+#define Y(k) node->k = NULL;
+	MEMBER_MAP(Y)
+#undef Y
 	node->texture = NULL;
 }
 Node* Node_Create()
