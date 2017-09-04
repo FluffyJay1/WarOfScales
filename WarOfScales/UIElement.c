@@ -17,11 +17,11 @@ void UIElement_Init(UIElement* element)
 	element->outline = FALSE;
 	element->frametimer = 0;
 	element->animationspeed = 1;
-	element->pos = *Point_Create(0, 0, 0);
-	element->lastpos = *Point_Create(0, 0, 0);
-	element->dim = *Point_Create(0, 0, 0);
-	element->framedim = *Point_Create(1, 1, 0);
-	element->texturedim = *Point_Create(0, 0, 0);
+	element->pos = (Point) { 0, 0, 0 };
+	element->lastpos = (Point) { 0, 0, 0 };
+	element->dim = (Point) { 0, 0, 0 };
+	element->framedim = (Point) { 1, 1, 0 };
+	element->texturedim = (Point) { 0, 0, 0 };
 	element->outlineColor = (SDL_Color){ 255, 255, 255 };
 	element->children = malloc(sizeof(NodeList));
 	NodeList_Init(element->children);
@@ -36,9 +36,9 @@ UIElement* UIElement_Create(int class, int flags, Point* pos, Point* dim, char* 
 	UIElement_Init(element);
 	element->class = class;
 	element->flags = flags;
-	element->pos = *pos;
+	Point_Copy(&element->pos, pos);
 	Point_Copy(&element->lastpos, pos);
-	element->dim = *dim;
+	Point_Copy(&element->dim, dim);
 	element->path = path;
 	return element;
 }

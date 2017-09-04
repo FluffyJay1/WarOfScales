@@ -13,10 +13,11 @@ DiffusionField *fuck;
 void Game_Init()
 {
 	int i;
-	UIElement *anim = UIElement_Create(Basic, button + draggable + circular, Point_Create(800, 450, 0), Point_Create(200, 200, 0), "res/anim(2x2).png");
-	UIElement *anim2 = UIElement_Create(Basic, button + circular, Point_Create(800, 850, 0), Point_Create(200, 200, 0), "res/anim(2x2).png");
+	UIElement *anim = UIElement_Create(Basic, button + draggable + circular, &(Point) { 800, 450, 0 }, &(Point) { 200, 200, 0 }, "res/anim(2x2).png");
+	UIElement *anim2 = UIElement_Create(Basic, button + circular, &(Point) { 800, 850, 0 }, &(Point) { 200, 200, 0 }, "res/anim(2x2).png");
 	UIElement* last = anim;
-	camera.pos = *Point_Create(WINDOW_WIDTH/2, WINDOW_HEIGHT/2, 0);
+	Line* l;
+	camera.pos = (Point) { WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 0 };
 	camera.scale = 1;
 	Game_BreakLoop = FALSE;
 	Game_BreakMouse = FALSE;
@@ -35,17 +36,23 @@ void Game_Init()
 	mousepos = (SDL_Point) { 0, 0 };
 	for (i = 0; i < 150; i++)
 	{
-		UIElement *fuk = UIElement_Create(Basic, button + draggable + circular, Point_Create(rand() % 30 - 15, 15, 0), Point_Create(200, 200, 0), "res/anim(2x2).png");
+		UIElement *fuk = UIElement_Create(Basic, button + draggable + circular, &(Point) { rand() % 30 - 15, 15, 0 }, &(Point) { 200, 200, 0 }, "res/anim(2x2).png");
 		//Game_AddUIElement(fuk);
 		//UIElement_Parent(fuk, last);
 		//fuk->outline = TRUE;
-		last = fuk;
+		//last = fuk;
+		UIElement_Destroy(fuk);
 	}
 	//anim2->outline = TRUE;
-	fuck = DiffusionField_Create(&(Point) { WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4, 0 });
-	fuck->mapdim = *Point_Create(WINDOW_WIDTH, WINDOW_HEIGHT, 0);
-	fuck->field[DiffusionField_PointerArithmetic(&fuck->dim, &(Point){WINDOW_WIDTH / 8, WINDOW_HEIGHT / 8})] = 10000;
-	fuck->passesPerSec = 10;
+	fuck = DiffusionField_Create(&(Point) { WINDOW_WIDTH / 16, WINDOW_HEIGHT / 16, 0 });
+	fuck->mapdim = (Point) { WINDOW_WIDTH, WINDOW_HEIGHT, 0 };
+	fuck->field[DiffusionField_PointerArithmetic(&fuck->dim, &(Point){WINDOW_WIDTH / 32, WINDOW_HEIGHT / 32})] = 10000000;
+	fuck->passesPerSec = 5;
+	l = Line_Create(&(Point) { 400, 400, 0 }, &(Point){600, 1200, 0});
+	Line_Rasterize(fuck->diffusable, NULL, FALSE, TRUE, &fuck->dim, &fuck->mapdim, &fuck->pos, l);
+	free(l);
+	l = Line_Create(&(Point) { 400, 400, 0 }, &(Point){150, 800, 0});
+	Line_Rasterize(fuck->diffusable, NULL, FALSE, TRUE, &fuck->dim, &fuck->mapdim, &fuck->pos, l);
 }
 void Game_LoadTextures(SDL_Renderer* renderer) //see if we can load everything at once
 {
@@ -196,11 +203,11 @@ void Game_Update(double frametime, Uint8 *keystate)
 	}
 	if (keystate[SDL_SCANCODE_UP])
 	{
-		camera.scale += frametime;
+		camera.scale += frametime * camera.scale;
 	}
 	if (keystate[SDL_SCANCODE_DOWN])
 	{
-		camera.scale -= frametime;
+		camera.scale -= frametime * camera.scale;
 	}
 	
 }

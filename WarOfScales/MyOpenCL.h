@@ -3,9 +3,11 @@
 #include <stdio.h>
 #define MAX_SOURCE_SIZE (0x100000)
 #define DEBUG 0
-#define CL_PRDEBUG //if(DEBUG)printf("ret at %d is %d\n", __LINE__, ret);
+#define CL_PRDEBUG if(DEBUG)printf("ret at %d is %d\n", __LINE__, ret);
 
 #define KERNEL_MAP(X) \
+X(SetArrayBoolean, "setarrayboolean") \
+X(SetArrayDouble, "setarraydouble") \
 X(Diffuse, "diffuse") \
 X(LineCollision, "linecollision")
 

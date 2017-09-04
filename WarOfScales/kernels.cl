@@ -4,6 +4,17 @@
 #define FALSE 0
 #define EPSILON 0.0001f
 
+__kernel void setarrayboolean(__global char *booleanarray, __global const char *val)
+{
+	size_t id = get_global_id(0);
+	booleanarray[id] = *val;
+}
+__kernel void setarraydouble(__global double *doublearray, __global const double *val)
+{
+	size_t id = get_global_id(0);
+	doublearray[id] = *val;
+}
+
 __kernel void diffuse(__global double *outputField, __global const double *inputField, __global const double *D, __global const double *lambda, __global const char *diffusable, __global const double *width, __global const double *height)
 {
 	size_t id = get_global_id(0);

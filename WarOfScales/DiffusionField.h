@@ -19,8 +19,6 @@ typedef struct DiffusionField {
 } DiffusionField;
 SDL_Texture* dfieldtexture;
 SDL_Texture* dfieldnexttexture;
-size_t global_item_size;
-size_t local_item_size;
 cl_mem outputfield_memobj;
 cl_mem inputfield_memobj;
 cl_mem d_memobj;

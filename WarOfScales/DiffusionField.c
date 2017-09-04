@@ -14,9 +14,9 @@ void DiffusionField_Init(DiffusionField* dfield)
 	dfield->passesPerSec = 1;
 	dfield->passTimer = 0;
 	dfield->iterationsPerPass = 1;
-	dfield->dim = *Point_Create(0, 0, 0);
-	dfield->mapdim = *Point_Create(0, 0, 0);
-	dfield->pos = *Point_Create(0, 0, 0);
+	dfield->dim = (Point) { 0, 0, 0 };
+	dfield->mapdim = (Point) { 0, 0, 0 };
+	dfield->pos = (Point) { 0, 0, 0 };
 	dfield->agents = NodeList_Create();
 }
 DiffusionField* DiffusionField_Create(Point* dim)

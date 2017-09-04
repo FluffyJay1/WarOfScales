@@ -5,7 +5,8 @@
 #define MEMBER_MAP(Y) \
 Y(UIElement) \
 Y(GameElement) \
-Y(DiffusionField)
+Y(DiffusionField) \
+Y(Line)
 
 typedef struct Node
 {
@@ -16,6 +17,7 @@ typedef struct Node
 	struct UIElement* UIElement;
 	struct GameElement* GameElement;
 	struct DiffusionField* DiffusionField;
+	struct Line* Line;
 	SDL_Texture* texture;
 	char* string;
 }Node;

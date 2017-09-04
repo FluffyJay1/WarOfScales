@@ -1,6 +1,7 @@
 #pragma once
 #include "SDL.h"
 #include "SDL_image.h"
+#include "MyOpenCL.h"
 //#include "main.h"
 /*
 #include "SDL_render.h"
@@ -30,7 +31,12 @@ typedef unsigned long long u64;
 typedef long long s64;
 typedef float f32;
 typedef double f64;
+size_t global_item_size;
+size_t local_item_size;
+cl_mem arrmemobj;
+cl_mem valmemobj;
 
+void SetArray(BOOLEAN* booleanarray, double* doublearray, int elements, double val);
 BOOLEAN float_IsEqual(float left, float right);
 BOOLEAN double_IsEqual(double left, double right);
 int Round(double input);
