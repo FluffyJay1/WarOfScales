@@ -13,7 +13,7 @@ SDL_Surface *image;
 int main(int argc, char* argv[])
 {
 	int i, j;
-	double k;
+	int k = 0;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	SDL_Texture* texture;
@@ -21,7 +21,8 @@ int main(int argc, char* argv[])
 	BOOLEAN quit = FALSE;
 	
 	Uint32 miliseconds = SDL_GetTicks();
-	double past100frames[100];
+	int past100frames[100] = {0}; // Initializes array to 0
+	int past100framestime = 0; // Records the total time it took to process previous 100 frames (in ms)
 
 	srand(time(NULL));
 	keystate = SDL_GetKeyboardState(NULL);
@@ -70,15 +71,11 @@ int main(int argc, char* argv[])
 			Game_UpdateReverse(keystate);
 			Game_UpdateParentRelationship();
 			Game_UpdateLastPos();
-			for (i = 98; i >= 0; i--) {
-				past100frames[i + 1] = past100frames[i];
-			}
-			past100frames[0] = (double)(SDL_GetTicks() - miliseconds) * 0.001;
-			k = 0;
-			for (i = 0; i < 100; i++) {
-				k += past100frames[i] / 100;
-			}
-			printf("%f\n", 1 / k); //print fps
+			past100framestime -= past100frames[k % 100];
+			past100frames[k % 100] = (SDL_GetTicks() - miliseconds);
+			past100framestime += past100frames[k % 100];
+			k++;
+			printf("%f\n", 100.0 * 1000.0 / past100framestime); //print fps
 			
 			
 			miliseconds = SDL_GetTicks();
