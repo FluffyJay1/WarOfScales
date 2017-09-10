@@ -8,7 +8,7 @@ void NodeList_Init(NodeList* list)
 }
 NodeList* NodeList_Create()
 {
-	Node* n = malloc(sizeof(NodeList));
+	NodeList* n = malloc(sizeof(NodeList));
 	NodeList_Init(n);
 	return n;
 }
