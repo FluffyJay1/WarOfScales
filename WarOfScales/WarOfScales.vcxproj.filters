@@ -42,6 +42,15 @@
     <ClCompile Include="Camera.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Map.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameElement.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Unit.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="SDL2.lib">
@@ -89,6 +98,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Map.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Unit.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

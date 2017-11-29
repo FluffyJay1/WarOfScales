@@ -6,6 +6,7 @@
 #include "UIElement.h"
 #include "DiffusionField.h"
 #include "Camera.h"
+#include "Map.h"
 
 Camera camera;
 SDL_Point mousepos;

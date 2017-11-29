@@ -54,6 +54,7 @@ void NodeList_InsertNode(NodeList* list, Node* leftnode, Node* node)
 		Node* temp = leftnode->nextNode;
 		leftnode->nextNode = node;
 		node->previousNode = leftnode;
+		node->index = leftnode->index + 1;
 		if (temp != NULL)  //temp is the original leftnode->nextNode
 		{
 			temp->previousNode = node;
@@ -93,8 +94,10 @@ void NodeList_RemoveNode(NodeList* list, Node* n, BOOLEAN destroy)
 {
 	if (NodeList_Contains(list, n))
 	{
+		printf("%p\n", n->nextNode);
 		if (n->nextNode == NULL && n->previousNode != NULL) //if is last node
 		{
+			list->lastNode = n->previousNode;
 			n->previousNode->nextNode = NULL;
 			n->previousNode = NULL;
 		}
@@ -152,7 +155,7 @@ void NodeList_FindUIElement(Node** output, NodeList* list, struct UIElement* ele
 	*output = NULL;
 	printf("Could not find element in function NodeList_FindUIElement!\n");
 }
-void NodeList_Clear(NodeList* list)
+void NodeList_Clear(NodeList* list, BOOLEAN destroy)
 {
 	Node* temp = list->headNode;
 	while (temp != NULL)
@@ -160,27 +163,57 @@ void NodeList_Clear(NodeList* list)
 		Node* tempnext = temp->nextNode;
 		temp->nextNode = NULL;
 		temp->previousNode = NULL;
+		if (destroy) { Node_Destroy(temp); }
+		else { free(temp); }
 		temp = tempnext;
 	}
 	list->headNode = NULL;
 	list->lastNode = NULL;
 	list->listSize = 0;
 }
+void NodeList_Destroy(NodeList* list)
+{
+	NodeList_Clear(list, TRUE);
+	free(list);
+}
 Node* NodeList_GetNode(NodeList* list, int depth, BOOLEAN reverse)
 {
 	int d = reverse ? list->listSize - depth - 1 : depth;
-	if (list == NULL || (unsigned int)list != 0xcccccccc)
+	if (list == NULL || (unsigned int)list == 0xcccccccc)
 	{
-		printf("Error in function NodeList_GetNode: n was null!\n");
+		printf("Error in function NodeList_GetNode: list was null!\n");
 		return NULL;
 	}
-	if (list->listSize / 2 > depth)
+	if (list->listSize / 2 > d)
 	{
 		return Node_GetNode(list->headNode, d, FALSE);
 	}
 	else
 	{
-		return Node_GetNode(list->lastNode, list->listSize - depth - 1, TRUE);
+		return Node_GetNode(list->lastNode, list->listSize - d - 1, TRUE);
+	}
+}
+/*
+Adds a list of nodes to *out which point to the nodes from *in
+so in the end you get a list of nodes that point to nodes
+make sure to free the new nodes
+*/
+void NodeList_GetNodesWithFlags(NodeList* out, NodeList* in, int withflags, BOOLEAN withall, int withoutflags, BOOLEAN withoutall)
+{
+	Node* temp;
+	for (temp = in->headNode; temp; temp = temp->nextNode)
+	{
+		/*
+		BOOLEAN with = withall ? temp->flags & withflags == withflags : (temp->flags & withflags > 0 || withflags == 0);
+		BOOLEAN without = withoutall ? temp->flags & withoutflags == 0 : (temp->flags | withoutflags != temp->flags || withoutflags == 0);
+		*/
+		if (withall ? temp->flags & withflags == withflags : (temp->flags & withflags > 0 || withflags == 0)
+			&& withoutall ? temp->flags & withoutflags == 0 : (temp->flags | withoutflags != temp->flags || withoutflags == 0))
+		{
+			Node* n = Node_Create();
+			n->Node = temp;
+			NodeList_AddNode(out, n);
+		}
 	}
 }
 void NodeList_ReverseListOrder(NodeList* list)
@@ -235,12 +268,14 @@ void Node_Init(Node* node)
 	node->y = 0;
 	node->w = 0;
 	node->h = 0;
+	node->flags = 0;
 	node->nextNode = NULL;
 	node->previousNode = NULL;
+	node->Node = NULL;
 #define Y(k) node->k = NULL;
 	MEMBER_MAP(Y)
 #undef Y
-	node->texture = NULL;
+	//node->texture = NULL; //already in member map
 }
 Node* Node_Create()
 {
@@ -252,7 +287,7 @@ Node* Node_GetNode(Node* n, int depth, BOOLEAN reverse)
 {
 	int i = 0;
 	Node* temp = n;
-	if (n == NULL || (unsigned int)n != 0xcccccccc)
+	if (n == NULL || (unsigned int)n == 0xcccccccc)
 	{
 		printf("Error in function Node_GetNode: n was null!\n");
 		return NULL;
@@ -284,5 +319,28 @@ Node* Node_GetNode(Node* n, int depth, BOOLEAN reverse)
 			temp = temp->previousNode;
 		}
 		return temp; //could be problematic, what if since temp is no longer in the scope it gets wiped
+	}
+}
+void Node_EnableFlags(Node* node, int flags)
+{
+	node->flags |= flags;
+}
+void Node_DisableFlags(Node* node, int flags)
+{
+	node->flags &= (~0 - flags);
+}
+void Node_ToggleFlags(Node* node, int flags)
+{
+	node->flags ^= flags;
+}
+void Node_SetFlags(Node* node, int flags, BOOLEAN set)
+{
+	if (set)
+	{
+		Node_EnableFlags(node, flags);
+	}
+	else
+	{
+		Node_DisableFlags(node, flags);
 	}
 }

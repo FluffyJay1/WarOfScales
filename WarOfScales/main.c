@@ -71,13 +71,12 @@ int main(int argc, char* argv[])
 			Game_UpdateReverse(keystate);
 			Game_UpdateParentRelationship();
 			Game_UpdateLastPos();
-			past100framestime -= past100frames[k % 100];
-			past100frames[k % 100] = (SDL_GetTicks() - miliseconds);
-			past100framestime += past100frames[k % 100];
+			k = k % 100;
+			past100framestime -= past100frames[k];
+			past100frames[k] = (SDL_GetTicks() - miliseconds);
+			past100framestime += past100frames[k];
 			k++;
 			printf("%f\n", 100.0 * 1000.0 / past100framestime); //print fps
-			
-			
 			miliseconds = SDL_GetTicks();
 		//}
 		//SDL_SetRenderDrawColor(renderer, rand() * 255, rand() * 255, rand() * 255, SDL_ALPHA_OPAQUE);

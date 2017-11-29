@@ -5,7 +5,7 @@
 void UIElement_Init(UIElement* element)
 {
 	element->nullptr = NULL;
-	element->class = Basic;
+	element->class = UIEClass_Base;
 	element->flags = 0;
 	element->frame = 0;
 	element->outlineWidth = 1;
@@ -77,21 +77,24 @@ void UIElement_ToggleFlags(UIElement* element, int flags)
 }
 void UIElement_Destroy(UIElement* element)
 {
-	Node* temp = element->children->headNode;
-	while (temp != NULL)
+	
+	Node* temp;
+	for (temp = element->children->headNode; temp; temp = temp->nextNode)
 	{
 		UIElement_Destroy(temp->UIElement);
 	}
+	
+	NodeList_Clear(element->children, FALSE);
+	free(element->children);
 	free(element);
 }
 void UIElement_GetFinalPos(Point* out, UIElement* element)
 {
 	if (element->parent != NULL)
 	{
-		Point* parentfinal = malloc(sizeof(Point));
-		UIElement_GetFinalPos(parentfinal, element->parent);
-		Point_Add(out, parentfinal, &element->pos);
-		free(parentfinal);
+		Point parentfinal;
+		UIElement_GetFinalPos(&parentfinal, element->parent);
+		Point_Add(out, &parentfinal, &element->pos);
 	}
 	else
 	{
@@ -151,7 +154,7 @@ void UIElement_HandleEvents(UIElement* element, SDL_Event* event)
 {
 	switch (event->type) {
 	case SDL_MOUSEMOTION:
-		if (element->pressed && element->flags & draggable && mousestate & SDL_BUTTON(SDL_BUTTON_LEFT)) //draggable
+		if (element->pressed && element->flags & UIEFlag_Draggable && mousestate & SDL_BUTTON(SDL_BUTTON_LEFT)) //draggable
 		{
 			element->pos.x += event->motion.xrel;
 			element->pos.y += event->motion.yrel;
@@ -161,7 +164,7 @@ void UIElement_HandleEvents(UIElement* element, SDL_Event* event)
 		if (UIElement_SDL_PointIsInside(element, &mousepos) && event->button.button == SDL_BUTTON_LEFT) //for both dragging and button
 		{
 			element->pressed = TRUE;
-			if (element->flags & button)
+			if (element->flags & UIEFlag_Button)
 			{
 				element->frame = 2;
 				UIElement_OnButtonPress(element);
@@ -173,7 +176,7 @@ void UIElement_HandleEvents(UIElement* element, SDL_Event* event)
 		if (event->button.button == SDL_BUTTON_LEFT)
 		{
 			element->pressed = FALSE;
-			if (element->flags & button) //button
+			if (element->flags & UIEFlag_Button) //button
 			{
 				if (UIElement_SDL_PointIsInside(element, &mousepos))
 				{
@@ -195,7 +198,7 @@ void UIElement_Update(UIElement* element, double frametime)
 }
 void UIElement_UpdateReverse(UIElement* element)
 {
-	if (element->flags & button) { //button
+	if (element->flags & UIEFlag_Button) { //button
 		if (element->pressed == FALSE)
 		{
 			if (UIElement_SDL_PointIsInside(element, &mousepos) && Game_BreakMouse == FALSE)
@@ -283,7 +286,7 @@ void UIElement_DrawOutline(SDL_Renderer* renderer, UIElement* element)
 	Point finalpos;
 	UIElement_GetFinalPos(&finalpos, element);
 	SDL_SetRenderDrawColor(renderer, element->outlineColor.r, element->outlineColor.g, element->outlineColor.b, element->outlineColor.a);
-	if (element->flags & circular)
+	if (element->flags & UIEFlag_Circular)
 	{
 		int i;
 		for (i = -element->outlineWidth - element->dim.y/2; i <= element->outlineWidth + element->dim.y/2; i++) {
@@ -320,7 +323,7 @@ BOOLEAN UIElement_SDL_PointIsInside(UIElement* element, SDL_Point* p)
 {
 	Point finalpos;
 	UIElement_GetFinalPos(&finalpos, element);
-	if (element->flags & circular)
+	if (element->flags & UIEFlag_Circular)
 	{
 		return (p->x - finalpos.x) * (p->x - finalpos.x) / (element->dim.x * element->dim.x / 4) + (p->y - finalpos.y) * (p->y - finalpos.y) / (element->dim.y * element->dim.y / 4) <= 1 ? TRUE : FALSE;
 	}

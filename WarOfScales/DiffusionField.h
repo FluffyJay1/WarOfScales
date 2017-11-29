@@ -3,19 +3,25 @@
 #include "LinkedList.h"
 #include "MyOpenCL.h"
 #include "Camera.h"
+#include "Utilities.h"
+/*
+Diffusion fields must have dimensions that are powers of 2
+because opencl and also i'm too lazy to work around that
+*/
 
 #define MAX_PASSES_PER_UPDATE 100
 #define DIAGONAL_WEIGHT 0.10355339059327376220042218105242 //now part of kernels.cl
 //#define DIAGONAL_WEIGHT 0.14644660940672623779957781894758
 #define ADJACENT_WEIGHT 0.14644660940672623779957781894758 //now part of kernels.cl
 #define DEFAULT_D 1
+#define DEFAULT_LAMBDA 0.75
 typedef struct DiffusionField {
 	double *field, *D, *lambda, *next;
 	BOOLEAN* diffusable;
 	double passesPerSec, passTimer;
 	int iterationsPerPass;
 	Point dim, mapdim, pos;
-	NodeList* agents;
+	NodeList *offenseagents, *defenseagents;
 } DiffusionField;
 SDL_Texture* dfieldtexture;
 SDL_Texture* dfieldnexttexture;
@@ -30,6 +36,7 @@ cl_mem height_memobj;
 void DiffusionField_Initialize();
 void DiffusionField_Init(DiffusionField* dfield);
 DiffusionField* DiffusionField_Create(Point* dim);
+void DiffusionField_CreateAt(DiffusionField* dfield, Point* dim);
 void DiffusionField_Destroy(DiffusionField* dfield);
 void DiffusionField_Update(DiffusionField* dfield, double frametime);
 void DiffusionField_Iterate(DiffusionField* dfield, int times);

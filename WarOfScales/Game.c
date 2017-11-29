@@ -9,15 +9,21 @@
 
 NodeList TextureList;
 SDL_Surface *image;
-DiffusionField *fuck;
+//DiffusionField *fuck;
+Map *map;
+/*
+PointArray *somepointarray;
+NodeList* pointarraylines;
+*/
 void Game_Init()
 {
 	int i;
-	UIElement *anim = UIElement_Create(Basic, button + draggable + circular, &(Point) { 800, 450, 0 }, &(Point) { 200, 200, 0 }, "res/anim(2x2).png");
-	UIElement *anim2 = UIElement_Create(Basic, button + circular, &(Point) { 800, 850, 0 }, &(Point) { 200, 200, 0 }, "res/anim(2x2).png");
+	Node* temp;
+	UIElement *anim = UIElement_Create(UIEClass_Base, UIEFlag_Button + UIEFlag_Draggable + UIEFlag_Circular, &(Point) { 800, 450, 0 }, &(Point) { 200, 200, 0 }, "res/anim(2x2).png");
+	UIElement *anim2 = UIElement_Create(UIEClass_Base, UIEFlag_Button + UIEFlag_Circular, &(Point) { 800, 850, 0 }, &(Point) { 200, 200, 0 }, "res/anim(2x2).png");
 	UIElement* last = anim;
 	Line* l;
-	camera.pos = (Point) { WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 0 };
+	camera.pos = (Point) { 0, 0, 0 };
 	camera.scale = 1;
 	Game_BreakLoop = FALSE;
 	Game_BreakMouse = FALSE;
@@ -29,14 +35,13 @@ void Game_Init()
 	anim2->play = TRUE;
 	anim2->animationspeed = 1;
 	*/
-	UIElement_EnableFlags(anim2, draggable);
+	UIElement_EnableFlags(anim2, UIEFlag_Draggable);
 	Game_AddUIElement(anim);
 	Game_AddUIElement(anim2);
-	//NodeList_Print(&UIElementList);
 	mousepos = (SDL_Point) { 0, 0 };
 	for (i = 0; i < 150; i++)
 	{
-		UIElement *fuk = UIElement_Create(Basic, button + draggable + circular, &(Point) { rand() % 30 - 15, 15, 0 }, &(Point) { 200, 200, 0 }, "res/anim(2x2).png");
+		UIElement *fuk = UIElement_Create(UIEClass_Base, UIEFlag_Button + UIEFlag_Draggable + UIEFlag_Circular, &(Point) { rand() % 30 - 15, 15, 0 }, &(Point) { 200, 200, 0 }, "res/anim(2x2).png");
 		//Game_AddUIElement(fuk);
 		//UIElement_Parent(fuk, last);
 		//fuk->outline = TRUE;
@@ -44,15 +49,43 @@ void Game_Init()
 		UIElement_Destroy(fuk);
 	}
 	//anim2->outline = TRUE;
-	fuck = DiffusionField_Create(&(Point) { WINDOW_WIDTH / 16, WINDOW_HEIGHT / 16, 0 });
-	fuck->mapdim = (Point) { WINDOW_WIDTH, WINDOW_HEIGHT, 0 };
-	fuck->field[DiffusionField_PointerArithmetic(&fuck->dim, &(Point){WINDOW_WIDTH / 32, WINDOW_HEIGHT / 32})] = 10000000;
+	/*
+	fuck = DiffusionField_Create(&(Point) { 128, 128, 0 });
+	fuck->mapdim = (Point) { 1024, 1024, 0 };
+	fuck->pos = (Point) { WINDOW_WIDTH/2 - 512, WINDOW_HEIGHT/2 - 512 };
+	fuck->field[DiffusionField_PointerArithmetic(&fuck->dim, &(Point){64, 64, 0})] = 100000;
 	fuck->passesPerSec = 5;
+	fuck->iterationsPerPass = 1;
+	*/
+	map = Map_CreateTest();
+	/*
+	somepointarray = PointArray_Create(24);
+	somepointarray->points[0] = (Point) { 200, 200, 0 };
+	somepointarray->points[1] = (Point) { 300, 200, 0 };
+	somepointarray->points[2] = (Point) { 400, 700, 0 };
+	somepointarray->points[3] = (Point) { 450, 650, 0 };
+	somepointarray->points[4] = (Point) { 300, 400, 0 };
+	somepointarray->points[5] = (Point) { 300, 300, 0 };
+	
+	for (i = 0; i < 24; i++) {
+		somepointarray->points[i] = (Point) { rand() % WINDOW_WIDTH, rand() % WINDOW_HEIGHT, (int)(rand() % 100) - 50 };
+	}
+	pointarraylines = NodeList_Create();
+	PointArray_GetLines(pointarraylines, somepointarray);
+	temp = pointarraylines->headNode;
+	while (temp != NULL)
+	{
+		//Line_Rasterize(fuck->diffusable, NULL, FALSE, TRUE, &fuck->dim, &fuck->mapdim, &fuck->pos, temp->Geom.Line);
+		temp = temp->nextNode;
+	}
+	*/
+	/*
 	l = Line_Create(&(Point) { 400, 400, 0 }, &(Point){600, 1200, 0});
 	Line_Rasterize(fuck->diffusable, NULL, FALSE, TRUE, &fuck->dim, &fuck->mapdim, &fuck->pos, l);
 	free(l);
 	l = Line_Create(&(Point) { 400, 400, 0 }, &(Point){150, 800, 0});
 	Line_Rasterize(fuck->diffusable, NULL, FALSE, TRUE, &fuck->dim, &fuck->mapdim, &fuck->pos, l);
+	*/
 }
 void Game_LoadTextures(SDL_Renderer* renderer) //see if we can load everything at once
 {
@@ -68,10 +101,10 @@ void Game_AddUIElement(UIElement* element)
 void Game_GetTexture(SDL_Texture** outputTexture, Point* outputFrameDim, Point* outputTextureDim, SDL_Renderer* renderer, char* path)
 {
 	//first we try to find this texture, unless we find a suitable place to insert it
-	Node* temp = TextureList.headNode, *in;
+	Node* temp, *in;
 	//Point outFd, outTd;
 	char *p1, *x;
-	while (temp != NULL)
+	for (temp = TextureList.headNode; temp != NULL; temp = temp->nextNode)
 	{
 		int comp = strcmp(temp->string, path);
 		if (comp == 0) //if equal
@@ -103,8 +136,8 @@ void Game_GetTexture(SDL_Texture** outputTexture, Point* outputFrameDim, Point* 
 				x = strchr(p1 + 1, 'x');
 				if (x != NULL)
 				{
-					in->x = ParseInt(p1 + 1);
-					in->y = ParseInt(x + 1);
+					in->x = ParseInt(p1 + 1, NULL);
+					in->y = ParseInt(x + 1, NULL);
 				}
 				else
 				{
@@ -132,7 +165,6 @@ void Game_GetTexture(SDL_Texture** outputTexture, Point* outputFrameDim, Point* 
 			}
 			return;
 		}
-		temp = temp->nextNode;
 	}
 	//if we reach the end or there's nothing loaded yet
 	in = Node_Create();
@@ -147,8 +179,8 @@ void Game_GetTexture(SDL_Texture** outputTexture, Point* outputFrameDim, Point* 
 		x = strchr(p1 + 1, 'x');
 		if (x != NULL)
 		{
-			in->x = ParseInt(p1 + 1);
-			in->y = ParseInt(x + 1);
+			in->x = ParseInt(p1 + 1, NULL);
+			in->y = ParseInt(x + 1, NULL);
 		}
 		else
 		{
@@ -177,14 +209,13 @@ void Game_GetTexture(SDL_Texture** outputTexture, Point* outputFrameDim, Point* 
 }
 void Game_Update(double frametime, Uint8 *keystate)
 {
-	Node* temp = UIElementList.headNode;
+	Node* temp;
 	Game_BreakMouse = FALSE;
-	while (temp != NULL)
+	for (temp = UIElementList.headNode; temp != NULL; temp = temp->nextNode)
 	{
 		UIElement_Update(temp->UIElement, frametime);
-		temp = temp->nextNode;
 	}
-	DiffusionField_Update(fuck, frametime); //AAAAAAAAAAAAAAAAAA
+	//DiffusionField_Update(fuck, frametime); //AAAAAAAAAAAAAAAAAA
 	if (keystate[SDL_SCANCODE_W])
 	{
 		camera.pos.y -= frametime * 100;
@@ -209,68 +240,104 @@ void Game_Update(double frametime, Uint8 *keystate)
 	{
 		camera.scale -= frametime * camera.scale;
 	}
-	
+	Map_Update(map, frametime);
 }
 void Game_UpdateReverse(Uint8 *keystate)
 {
-	Node* temp = UIElementList.lastNode;
+	Node* temp;
 	Game_BreakMouse = FALSE;
-	while (temp != NULL)
+	for (temp = UIElementList.lastNode; temp != NULL; temp = temp->previousNode)
 	{
 		UIElement_UpdateReverse(temp->UIElement);
-		temp = temp->previousNode;
 	}
 }
 void Game_UpdateParentRelationship()
 {
-	Node* temp = UIElementList.headNode;
-	while (temp != NULL)
+	Node* temp;
+	for (temp = UIElementList.headNode; temp != NULL; temp = temp->nextNode)
 	{
 		UIElement_UpdateParentRelationship(temp->UIElement);
-		temp = temp->nextNode;
 	}
 }
 void Game_UpdateLastPos()
 {
-	Node* temp = UIElementList.headNode;
-	while (temp != NULL)
+	Node* temp;
+	for (temp = UIElementList.headNode; temp != NULL; temp = temp->nextNode)
 	{
 		UIElement_UpdateLastPos(temp->UIElement);
-		temp = temp->nextNode;
 	}
 }
 void Game_Draw(SDL_Renderer* renderer)
 {
-	Node* temp = UIElementList.headNode;
+	int i = 0; //blank comments mean is test code
+	Node* temp;
 	Point c, coll;
 	Line *m, *o;
-	while (temp != NULL)
+	//BOOLEAN *bcoll = malloc(sizeof(BOOLEAN) * somepointarray->size);//
+	//Point *pos = malloc(sizeof(Point) * somepointarray->size);//
+	BOOLEAN bcoll1;
+	Point pos1;
+	//NodeList line;//
+	//Node* asdf = Node_Create();//
+	//NodeList_Init(&line);//
+	
+	for (temp = UIElementList.headNode; temp != NULL; temp = temp->nextNode)
 	{
 		UIElement_Draw(renderer, temp->UIElement);
+	}
+	//temp = pointarraylines->headNode;//
+	/*
+	while (temp != NULL)//
+	{
+		DrawLine(renderer, (SDL_Point) { temp->Geom.Line->p1.x, temp->Geom.Line->p1.y}, (SDL_Point) { temp->Geom.Line->p2.x, temp->Geom.Line->p2.y }, 2, (SDL_Color) { 255, 255, 0, 255 });
 		temp = temp->nextNode;
 	}
-	DiffusionField_Draw(renderer, fuck, &camera);
+	*/
+	//DiffusionField_Draw(renderer, fuck, &camera);
+	Map_Draw(renderer, map, &camera);
 	DrawLine(renderer, (SDL_Point) { 50, 50 }, mousepos, 2, (SDL_Color) { 255, 255, 0, 255 });
 	DrawLine(renderer, (SDL_Point) { 500, 300 }, (SDL_Point) { 500, 400 }, 2, (SDL_Color) { 255, 255, 0, 255 });
 
 	SDL_Point_to_Point(&c, &mousepos);
 	m = Line_Create(&(Point) { 50, 50, 0 }, &c);
-	o = Line_Create(&(Point) { 500, 300, 0 }, &(Point){500, 400, 0});
-	if (Line_Collides(&coll, m, o))
+	o = Line_Create(&(Point) { 500, 300, -50 }, &(Point){500, 400, 50});
+	if (Line_Collides(&coll, m, o, TRUE))
 	{
 		DrawCircle(renderer, (SDL_Point) { coll.x, coll.y}, 10, (SDL_Color) { 255, 0, 0, 255 });
 	}
+	//asdf->Geom.Line = m;//
+	//NodeList_AddNode(&line, asdf);//
+	
+	//Line_CollidesBatch(bcoll, &bcoll1, NULL, pos, &pos1, NULL, &line, pointarraylines, TRUE);//
+	/*
+	for (i = 0; i < pointarraylines->listSize; i++)//
+	{
+		if (bcoll[i])
+		{
+			DrawCircle(renderer, (SDL_Point) { (int)pos[i].x, (int)pos[i].y }, 10, (SDL_Color) { 255, 0, 0, 255 });
+		}
+	}
+	if (bcoll1)
+	{
+		DrawCircle(renderer, (SDL_Point) { (int)pos1.x, (int)pos1.y }, 10, (SDL_Color) { 0, 255, 255, 255 });
+	}
+	*/
 	free(m);
 	free(o);
+
+	//free(pos);//
+	//free(bcoll);//
+	//NodeList_Clear(&line, FALSE);//
 }
 void Game_HandleEvent(SDL_Event* event)
 {
-	Node* temp = UIElementList.lastNode;
+	Node* temp;
+	PointArray* pa;
+	Point mapspace, gridspace;
 	Game_BreakLoop = FALSE;
-	while (temp != NULL && Game_BreakLoop == FALSE)
+	for (temp = UIElementList.lastNode; temp != NULL && Game_BreakLoop == FALSE; temp = temp->previousNode)
 	{
 		UIElement_HandleEvents(temp->UIElement, event);
-		temp = temp->previousNode;
 	}
 	switch (event->type) {
 	case SDL_MOUSEMOTION:

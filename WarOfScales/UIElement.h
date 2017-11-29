@@ -7,25 +7,21 @@
 
 enum UIElementClass
 {
-	Basic,
+	UIEClass_Base,
 	//main menu
-	StartButton,
-	LevelSelectButton,
-	ControlsButton,
-	QuitButton,
 };
 enum UIElementFlags
 {
-	visible = 1,
-	active = 2,
-	button = 4,
-	window = 8,
-	draggable = 16,
-	circular = 32,
+	UIEFlag_Visible = 1,
+	UIEFlag_Active = 2,
+	UIEFlag_Button = 4,
+	UIEFlag_Window = 8,
+	UIEFlag_Draggable = 16,
+	UIEFlag_Circular = 32,
 };
 typedef struct UIElement 
 {
-	int *nullptr;
+	int *nullptr; //no clue what this is but i think i may use it for something
 	int class, flags, frame, outlineWidth;
 	BOOLEAN play, refreshTexture, visible, pressed, breakMouse, outline;
 	double frametimer, animationspeed;
