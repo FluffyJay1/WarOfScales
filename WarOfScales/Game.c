@@ -218,19 +218,19 @@ void Game_Update(double frametime, Uint8 *keystate)
 	//DiffusionField_Update(fuck, frametime); //AAAAAAAAAAAAAAAAAA
 	if (keystate[SDL_SCANCODE_W])
 	{
-		camera.pos.y -= frametime * 100;
+		camera.pos.y -= frametime * 1000;
 	}
 	if (keystate[SDL_SCANCODE_S])
 	{
-		camera.pos.y += frametime * 100;
+		camera.pos.y += frametime * 1000;
 	}
 	if (keystate[SDL_SCANCODE_A])
 	{
-		camera.pos.x -= frametime * 100;
+		camera.pos.x -= frametime * 1000;
 	}
 	if (keystate[SDL_SCANCODE_D])
 	{
-		camera.pos.x += frametime * 100;
+		camera.pos.x += frametime * 1000;
 	}
 	if (keystate[SDL_SCANCODE_UP])
 	{

@@ -23,7 +23,7 @@ typedef struct GameElement {
 	int* nullptr;
 	int class, flags, frame, team;
 	BOOLEAN play, refreshTexture, visible, alive, remove; //alive and remove are different because there is possibility of HEROES NEVER DIE happening
-	double frametimer, animationspeed, thinktimer, thinkspeed, movespeed;
+	double frametimer, animationspeed, thinktimer, thinkspeed, movespeed, hp, maxhp;
 	Point pos, movevec, lastpos, dim, framedim, texturedim;
 	char* path;
 	SDL_Texture* texture;

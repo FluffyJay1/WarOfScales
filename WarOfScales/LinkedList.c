@@ -194,9 +194,8 @@ Node* NodeList_GetNode(NodeList* list, int depth, BOOLEAN reverse)
 	}
 }
 /*
-Adds a list of nodes to *out which point to the nodes from *in
-so in the end you get a list of nodes that point to nodes
-make sure to free the new nodes
+Copies over nodes
+make sure to free them
 */
 void NodeList_GetNodesWithFlags(NodeList* out, NodeList* in, int withflags, BOOLEAN withall, int withoutflags, BOOLEAN withoutall)
 {
@@ -211,7 +210,7 @@ void NodeList_GetNodesWithFlags(NodeList* out, NodeList* in, int withflags, BOOL
 			&& withoutall ? temp->flags & withoutflags == 0 : (temp->flags | withoutflags != temp->flags || withoutflags == 0))
 		{
 			Node* n = Node_Create();
-			n->Node = temp;
+			Node_Copy(n, temp);
 			NodeList_AddNode(out, n);
 		}
 	}
@@ -250,6 +249,8 @@ void NodeList_Print(NodeList* list)
 void Node_Copy(Node* output, Node* input)
 {
 	memcpy(output, input, sizeof(Node));
+	output->previousNode = NULL;
+	output->nextNode = NULL;
 }
 void Node_Destroy(Node* node)
 {

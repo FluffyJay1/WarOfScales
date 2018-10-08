@@ -4,15 +4,22 @@
 #include "GameElement.h"
 #include "Unit.h"
 
-#define FOW_RESOLUTION 1 //sqrt of how many fow pixels per diffusion field pixels
+#define FOW_RESOLUTION 1 //sqrt of how many fow pixels per diffusion field pixels TODO sdl surface hackery
 #define HEIGHTMAP_RESOLUTION 2 //sqrt of how many heightmap pixels per diffusion field pixels
 #define MAP_TO_GRID_RATIO 32 //scale between map and grid
+#define FOW_UPDATE_SPEED 5
+#define FOW_CLEAR_SPEED 5
+#define UNIT_LINE_COLLIDE_RADIUS 2 //the minimum distance between a unit and a wall
+#define UNIT_PATH_INTERVAL 0.5
+#define LINE_LEVEL3_Z 2048
+#define LINE_LEVEL1_Z -2048
+#define LOS_UPDATE_SPEED 2
 
 //member name, passes per sec
 #define MAP_DFIELD_MAP(X) \
-X(dfield_patha, 30) \
+X(dfield_patha, 20) \
 X(dfield_firea, 5) \
-X(dfield_pathb, 30) \
+X(dfield_pathb, 20) \
 X(dfield_fireb, 5) 
 /*
 Line blocking hiearchy: (which it blocks first)
@@ -32,9 +39,10 @@ typedef struct Map {
 	DiffusionField *dfield_patha, *dfield_firea, *dfield_pathb, *dfield_fireb; //path field blocked by terrain, fire field not blocked by terrain you can shoot over
 	Grid *heightmap, *fowmapa, *fowmapb;
 	NodeList *linelist, *unitlista, *unitlistb;
+	double fowcleartimer, fowupdatetimer, losupdatetimer;
 	/*
 	For linelist, flags is the blocking level
-	For unitlist, xy is position, w is offense weight (dfield), h is defense weight (dfield), flags is visible or not
+	For unitlist, xy is position, w is offense weight (dfield), h is defense weight (dfield), flags is visible or not, point.x is offensive lambda, point.y is defensive lambda
 	*/
 }Map;
 
@@ -49,12 +57,21 @@ void Map_GenerateHeightmapFromData(Map* map, char* data, char** returnpointer);
 void Map_BakeDiffusionFields(Map* map);
 void Map_AddUnit(Map* map, Unit* unit, int team);
 void Map_Update(Map* map, double frametime);
+
 void Map_UpdatePathfind(Map* map);
 void Map_GetPathfindLinesForUnit(NodeList* list, Map* map, Unit* unit, BOOLEAN update);
 void Map_UpdatePathfindForUnit(Unit* unit, Map* map, int* index, BOOLEAN* coll, BOOLEAN update);
+
 void Map_CheckUnitCollisions(Map* map);
-void Map_UpdateLOS(Map* map);
-void Map_UpdateFOW(Map* map);
+
+void Map_UpdateUnitTargets(Map* map);
+int Map_GetTargetLinesForUnit(Unit* unit, NodeList* enemies, NodeList* targets, NodeList* lines);
+void Map_UpdateTargetForUnit(Unit* unit, Node** targetnode, Node** linenode, int* index, BOOLEAN* coll, int numtargets);
+
+void Map_UpdateDeadUnits(Map* map);
+
+void Map_UpdateLOS(Map* map, double frametime);
+void Map_UpdateFOW(Map* map, double frametime);
 void Map_UpdateFOWForUnit(Map* map, Unit* unit, Grid* fowmap);
 void Map_UpdateDiffusionFields(Map* map, double frametime);
 void Map_Destroy(Map* map);
@@ -65,3 +82,4 @@ void Map_Draw(SDL_Renderer* renderer, Map* map, Camera* camera);
 
 BOOLEAN Unit_IsStationary(Unit* unit, Map* map);
 BOOLEAN Unit_HasMoved(Unit* unit, Map* map);
+void Unit_OnDeath(Unit* unit, Map* map);

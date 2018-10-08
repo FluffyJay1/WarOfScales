@@ -18,6 +18,8 @@ enum NodeFlags {
 	NFlag_Blocking3 = 8,
 	NFlag_Moved = 16, //unit moved grid spaces
 	NFlag_Stationary = 32, //unit is not moving
+	NFlag_Update = 64,
+	NFlag_Dead = 128,
 };
 typedef struct Node
 {

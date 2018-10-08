@@ -14,7 +14,7 @@ because opencl and also i'm too lazy to work around that
 //#define DIAGONAL_WEIGHT 0.14644660940672623779957781894758
 #define ADJACENT_WEIGHT 0.14644660940672623779957781894758 //now part of kernels.cl
 #define DEFAULT_D 1
-#define DEFAULT_LAMBDA 0.75
+#define DEFAULT_LAMBDA 1
 typedef struct DiffusionField {
 	double *field, *D, *lambda, *next;
 	BOOLEAN* diffusable;

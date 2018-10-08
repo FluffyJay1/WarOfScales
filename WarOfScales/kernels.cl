@@ -44,6 +44,10 @@ __kernel void diffuse(__global double *outputField, __global const double *input
 		}
 		outputField[id] *= lambda[id];
 	}
+	else
+	{
+		outputField[id] = 0;
+	}
 }
 double Line_HeightAt(double lp1x, double lp1y, double lp1z, double lp2x, double lp2y, double lp2z, double px, double py)
 {
@@ -53,9 +57,9 @@ double Line_HeightAt(double lp1x, double lp1y, double lp1z, double lp2x, double 
 		{
 			return lp1z > lp2z ? lp1z : lp2z;
 		}
-		return lp1z + ((px - lp1x) / (lp2x - lp1x)) * (lp2z - lp1z);
+		return lp1z + ((py - lp1y) / (lp2y - lp1y)) * (lp2z - lp1z);
 	}
-	return lp1z + ((py - lp1y) / (lp2y - lp1y)) * (lp2z - lp1z);
+	return lp1z + ((px - lp1x) / (lp2x - lp1x)) * (lp2z - lp1z);
 }
 //l1 is the set of lines we want to test, l2 is the line "map"
 //1 work group per different l1, 1 work item per different l2
@@ -84,7 +88,7 @@ __kernel void linecollision(__global char *outputcollides, __global double *outp
 	*/
 	if (l1null[l1id] || l2null[l2id]
 	|| l1bound_left[l1id] > l2bound_right[l2id] || l1bound_right[l1id] < l2bound_left[l2id] || l1bound_up[l1id] > l2bound_down[l2id] || l1bound_down[l1id] < l2bound_up[l2id] 
-	|| (*considerHeight && l1p1z[l1id] < l2p1z[l2id] && l1p2z[l1id] < l2p1z[l2id] && l1p1z[l1id] < l2p2z[l2id] && l1p2z[l1id] < l2p2z[l2id]))
+	|| (*considerHeight && l1p1z[l1id] > l2p1z[l2id] && l1p2z[l1id] > l2p1z[l2id] && l1p1z[l1id] > l2p2z[l2id] && l1p2z[l1id] > l2p2z[l2id]))
 	{
 		outputcollides[id] = FALSE;
 		return;

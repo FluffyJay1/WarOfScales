@@ -104,6 +104,23 @@ void Point_Normalize2D(Point* output, Point* p)
 		*output = (Point) { 0, 0, p->z };
 	}
 }
+void Point_Traverse(Point* output, Point* p1, Point* p2, double distance)
+{
+	Point vec;
+	Point_Subtract(&vec, p2, p1);
+	Point_Normalize(&vec, &vec);
+	Point_Multiply(&vec, &vec, distance);
+	Point_Add(output, p1, &vec);
+}
+void Point_Traverse2D(Point* output, Point* p1, Point* p2, double distance)
+{
+	Point vec;
+	Point_Subtract(&vec, p2, p1);
+	vec.z = 0;
+	Point_Normalize(&vec, &vec);
+	Point_Multiply(&vec, &vec, distance);
+	Point_Add(output, p1, &vec);
+}
 void Point_MapToGrid(Point* output, Point* griddim, Point* mapdim, Point* pos, Point* in)
 {
 	output->x = (in->x - pos->x) * griddim->x / mapdim->x;
@@ -309,7 +326,7 @@ void Line_CreateAt(Line* l, Point* p1, Point* p2)
 		l->vertical = FALSE;
 		l->slope = (p2->y - p1->y) / (p2->x - p1->x);
 	}
-	l->length = Point_Length(p1, p2);
+	l->length = Point_Length2D(p1, p2);
 }
 void Line_Copy(Line* out, Line* in)
 {
@@ -358,7 +375,7 @@ BOOLEAN Line_Collides(Point* out, Line* l1, Line* l2, BOOLEAN considerHeight)
 	Point ret;
 	if ( !l1 || !l2 //either line is null
 		|| l1->bound_left > l2->bound_right || l1->bound_right < l2->bound_left || l1->bound_up > l2->bound_down || l1->bound_down < l2->bound_up 
-		|| (considerHeight && l1->p1.z < l2->p1.z && l1->p2.z < l2->p1.z && l1->p1.z < l2->p2.z && l1->p2.z < l2->p2.z))
+		|| (considerHeight && l1->p1.z > l2->p1.z && l1->p2.z > l2->p1.z && l1->p1.z > l2->p2.z && l1->p2.z > l2->p2.z))
 	{
 		return FALSE;
 	}
@@ -435,8 +452,10 @@ outcoll 2 is for if each line2 collides
 outpos is the entire list of collision locations
 outpos1 gives the collision location closest to l1's p1
 outpos2 gives the collision location closest to l2's p1
+outline1 gives the closest line that line1 collides with, only if outpos1 isn't null
+outline2 gives the closest line that line2 collides with, only if outpos2 isn't null
 */
-void Line_CollidesBatch(BOOLEAN* outcoll, BOOLEAN* outcoll1, BOOLEAN* outcoll2, Point* outpos, Point* outpos1, Point* outpos2, NodeList* nl1, NodeList* nl2, BOOLEAN considerHeight)
+void Line_CollidesBatch(BOOLEAN* outcoll, BOOLEAN* outcoll1, BOOLEAN* outcoll2, Point* outpos, Point* outpos1, Point* outpos2, Line** outline1, Line** outline2, NodeList* nl1, NodeList* nl2, BOOLEAN considerHeight)
 {
 	if (usegpu)
 	{
@@ -596,6 +615,10 @@ void Line_CollidesBatch(BOOLEAN* outcoll, BOOLEAN* outcoll1, BOOLEAN* outcoll2, 
 								Point_LengthSquared2D(&(Point) { l1p1x[ind1], l1p1y[ind1], 0 }, &(Point) { outputx[i], outputy[i], 0 }) < Point_LengthSquared2D(&(Point) { l1p1x[ind1], l1p1y[ind1], 0 }, &outpos1[ind1]))
 							{
 								outpos1[ind1] = (Point) { outputx[i], outputy[i], 0 };
+								if (outline1 != NULL)
+								{
+									outline1[ind1] = iterator2->Geom.Line;
+								}
 							}
 						}
 						outcoll1[ind1] = TRUE;
@@ -609,6 +632,10 @@ void Line_CollidesBatch(BOOLEAN* outcoll, BOOLEAN* outcoll1, BOOLEAN* outcoll2, 
 								Point_LengthSquared2D(&(Point) { l2p1x[ind2], l2p1y[ind2], 0 }, &(Point) { outputx[i], outputy[i], 0 }) < Point_LengthSquared2D(&(Point) { l2p1x[ind2], l2p1y[ind2], 0 }, &outpos2[ind2]))
 							{
 								outpos2[ind2] = (Point) { outputx[i], outputy[i], 0 };
+								if (outline2 != NULL)
+								{
+									outline2[ind2] = iterator1->Geom.Line;
+								}
 							}
 						}
 						outcoll2[ind2] = TRUE;
@@ -672,6 +699,10 @@ void Line_CollidesBatch(BOOLEAN* outcoll, BOOLEAN* outcoll1, BOOLEAN* outcoll2, 
 							Point_LengthSquared2D(&p, &iterator1->Geom.Line->p1) < Point_LengthSquared2D(&outpos1[ind1], &iterator1->Geom.Line->p1)))
 						{
 							outpos1[ind1] = p;
+							if (outline1 != NULL)
+							{
+								outline1[ind1] = iterator2->Geom.Line;
+							}
 						}
 						outcoll1[ind1] = TRUE;
 					}
@@ -681,6 +712,10 @@ void Line_CollidesBatch(BOOLEAN* outcoll, BOOLEAN* outcoll1, BOOLEAN* outcoll2, 
 							Point_LengthSquared2D(&p, &iterator2->Geom.Line->p1) < Point_LengthSquared2D(&outpos2[ind2], &iterator2->Geom.Line->p1)))
 						{
 							outpos2[ind2] = p;
+							if (outline1 != NULL)
+							{
+								outline2[ind2] = iterator1->Geom.Line;
+							}
 						}
 						outcoll1[ind2] = TRUE;
 					}
@@ -793,7 +828,7 @@ void Line_Rasterize(BOOLEAN* booleangrid, double* doublegrid, double result, BOO
 	}
 	else if (gridline->slope < 1 && gridline->slope > -1) //slope is between -1 and 1
 	{
-		for (i = gridline->bound_left > 0 ? gridline->bound_left : 0; i <= gridline->bound_right && i < griddim->x; i++) { //initial line
+		for (i = gridline->bound_left > 0 ? gridline->bound_left : 0; i + 0.5 <= gridline->bound_right && i < griddim->x; i++) { //initial line
 			int y = gridline->slope * (i + 0.5 - gridline->p1.x) + gridline->p1.y;
 			if (y >= 0 && y < griddim->y)
 			{
@@ -809,22 +844,28 @@ void Line_Rasterize(BOOLEAN* booleangrid, double* doublegrid, double result, BOO
 		}
 		if (thick) //thicc line
 		{
-			for (i = gridline->bound_up > 0 ? gridline->bound_up : 0; i <= gridline->bound_down && i < griddim->y; i++) {
+			for (i = gridline->bound_up > 0 ? gridline->bound_up : 0; i <= gridline->bound_down + 1 && i < griddim->y; i++) {
 				int x = (i - gridline->p1.y) / gridline->slope + gridline->p1.x;
 				if (x >= 0 && x < griddim->x && x >= (int)gridline->bound_left && x <= (int)gridline->bound_right)
 				{
 					if (booleangrid != NULL)
 					{
-						booleangrid[Grid_PointerArithmetic(griddim, &(Point){x, i, 0 })] = result;
-						if (i > 0)
+						if (i <= gridline->bound_down)
+						{
+							booleangrid[Grid_PointerArithmetic(griddim, &(Point){x, i, 0 })] = result;
+						}
+						if (i > 0 && i > gridline->bound_up)
 						{
 							booleangrid[Grid_PointerArithmetic(griddim, &(Point){x, i - 1, 0 })] = result;
 						}
 					}
 					if (doublegrid != NULL)
 					{
-						doublegrid[Grid_PointerArithmetic(griddim, &(Point){x, i, 0 })] = result;
-						if (i > 0)
+						if (i <= gridline->bound_down)
+						{
+							doublegrid[Grid_PointerArithmetic(griddim, &(Point){x, i, 0 })] = result;
+						}
+						if (i > 0 && i > gridline->bound_up)
 						{
 							doublegrid[Grid_PointerArithmetic(griddim, &(Point){x, i - 1, 0 })] = result;
 						}
@@ -835,7 +876,7 @@ void Line_Rasterize(BOOLEAN* booleangrid, double* doublegrid, double result, BOO
 	}
 	else //magnitude of slope is greater than 1
 	{
-		for (i = gridline->bound_up > 0 ? gridline->bound_up : 0; i <= gridline->bound_down && i < griddim->y; i++) {
+		for (i = gridline->bound_up > 0 ? gridline->bound_up : 0; i + 0.5 <= gridline->bound_down && i < griddim->y; i++) {
 			int x = (i + 0.5 - gridline->p1.y) / gridline->slope + gridline->p1.x;
 			if (x >= 0 && x < griddim->x)
 			{
@@ -851,22 +892,28 @@ void Line_Rasterize(BOOLEAN* booleangrid, double* doublegrid, double result, BOO
 		}
 		if (thick) //thicc line
 		{
-			for (i = gridline->bound_left > 0 ? gridline->bound_left : 0; i <= gridline->bound_right && i < griddim->x; i++) {
+			for (i = gridline->bound_left > 0 ? gridline->bound_left : 0; i <= gridline->bound_right + 1 && i < griddim->x; i++) {
 				int y = gridline->slope * (i - gridline->p1.x) + gridline->p1.y;
 				if (y >= 0 && y < griddim->y && y >= (int)gridline->bound_up && y <= (int)gridline->bound_down)
 				{
 					if (booleangrid != NULL)
 					{
-						booleangrid[Grid_PointerArithmetic(griddim, &(Point){i, y, 0 })] = result;
-						if (i > 0)
+						if (i <= gridline->bound_right)
+						{
+							booleangrid[Grid_PointerArithmetic(griddim, &(Point){i, y, 0 })] = result;
+						}
+						if (i > 0 && i > gridline->bound_left)
 						{
 							booleangrid[Grid_PointerArithmetic(griddim, &(Point){i - 1, y, 0 })] = result;
 						}
 					}
 					if (doublegrid != NULL)
 					{
-						doublegrid[Grid_PointerArithmetic(griddim, &(Point){i, y, 0 })] = result;
-						if (i > 0)
+						if (i <= gridline->bound_right)
+						{
+							doublegrid[Grid_PointerArithmetic(griddim, &(Point){i, y, 0 })] = result;
+						}
+						if (i > 0 && i > gridline->bound_left)
 						{
 							doublegrid[Grid_PointerArithmetic(griddim, &(Point){i - 1, y, 0 })] = result;
 						}

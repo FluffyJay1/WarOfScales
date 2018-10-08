@@ -64,13 +64,19 @@ void DiffusionField_Iterate(DiffusionField* dfield, int times)
 {
 	int i;
 	Node* temp;
-	if (dfield->offenseagents) {
+	DiffusionField_SetArray(dfield->lambda, NULL, &dfield->dim, DEFAULT_LAMBDA);
+	if (dfield->offenseagents) 
+	{
 		for (temp = dfield->offenseagents->headNode; temp; temp = temp->nextNode)
 		{
 			Point p = (Point) { temp->x, temp->y, 0 };
-			if (temp->flags & NFlag_Visible && Point_IsInside2D(&dfield->dim, &p))
+			if (/*temp->flags & NFlag_Visible && */!(temp->flags & NFlag_Dead) && Point_IsInside2D(&dfield->dim, &p))
 			{
-				dfield->field[Grid_PointerArithmetic(&dfield->dim, &p)] = temp->w;
+				if (temp->w != -1)
+				{
+					dfield->field[Grid_PointerArithmetic(&dfield->dim, &p)] = temp->w;
+				}
+				dfield->lambda[Grid_PointerArithmetic(&dfield->dim, &p)] = temp->Geom.Point->x;
 			}
 		}
 	}
@@ -78,7 +84,15 @@ void DiffusionField_Iterate(DiffusionField* dfield, int times)
 	{
 		for (temp = dfield->defenseagents->headNode; temp; temp = temp->nextNode)
 		{
-			dfield->field[Grid_PointerArithmetic(&dfield->dim, &(Point){temp->x, temp->y, 0})] = temp->h; //can override the dfield presence of offense agents to obscure smell and increase ground covered
+			Point p = (Point) { temp->x, temp->y, 0 };
+			if (!(temp->flags & NFlag_Dead) && Point_IsInside2D(&dfield->dim, &p)) 
+			{
+				if (temp->h != -1)
+				{
+					dfield->field[Grid_PointerArithmetic(&dfield->dim, &p)] = temp->h; //can override the dfield presence of offense agents to obscure smell and increase ground covered
+				}
+				dfield->lambda[Grid_PointerArithmetic(&dfield->dim, &p)] = temp->Geom.Point->y;
+			}
 		}
 	}
 	if (usegpu) 
@@ -201,8 +215,13 @@ void DiffusionField_Iterate(DiffusionField* dfield, int times)
 							}
 						}
 					}
+					dfield->next[ptr] *= dfield->lambda[ptr];
 				}
-				dfield->next[ptr] *= dfield->lambda[ptr];
+				else
+				{
+					dfield->next[ptr] = 0;
+				}
+				
 			}
 			memcpy(dfield->field, dfield->next, sizeof(double) * dfield->dim.x * dfield->dim.y);
 		}
@@ -212,6 +231,7 @@ void DiffusionField_Iterate(DiffusionField* dfield, int times)
 }
 void DiffusionField_SetArray(double* doubleArray, BOOLEAN* booleanArray, Point* dim, double value)
 {
+	/*
 	int i;
 	if (doubleArray != NULL)
 	{
@@ -227,6 +247,8 @@ void DiffusionField_SetArray(double* doubleArray, BOOLEAN* booleanArray, Point* 
 			booleanArray[i] = value;
 		}
 	}
+	*/
+	SetArray(booleanArray, doubleArray, dim->x * dim->y, value); //uh
 }
 void DiffusionField_Clear(DiffusionField* dfield)
 {

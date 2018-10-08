@@ -18,6 +18,8 @@ void GameElement_Init(GameElement* element)
 	element->thinktimer = 0;
 	element->thinkspeed = 1;
 	element->movespeed = 0;
+	element->hp = 1;
+	element->maxhp = 1;
 	element->pos = (Point) { 0, 0, 0 };
 	element->movevec = (Point) { 0, 0, 0 };
 	element->lastpos = (Point) { 0, 0, 0 };
@@ -69,16 +71,19 @@ void GameElement_Destroy(GameElement* element)
 void GameElement_Update(GameElement* element, double frametime)
 {
 	Point_Copy(&element->lastpos, &element->pos);
-	if (element->flags & GEFlags_Thinking)
+	if (element->alive)
 	{
-		element->thinktimer += frametime * element->thinkspeed;
-	}
-	if (element->flags & GEFlags_Moving)
-	{
-		Point move;
-		
-		Point_Multiply(&move, &element->movevec, element->movespeed * frametime);
-		Point_Add(&element->pos, &element->pos, &move);
+		if (element->flags & GEFlags_Thinking)
+		{
+			element->thinktimer += frametime * element->thinkspeed;
+		}
+		if (element->flags & GEFlags_Moving)
+		{
+			Point move;
+
+			Point_Multiply(&move, &element->movevec, element->movespeed * frametime);
+			Point_Add(&element->pos, &element->pos, &move);
+		}
 	}
 	if (element->play == TRUE)
 	{

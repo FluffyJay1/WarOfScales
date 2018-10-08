@@ -2,19 +2,24 @@
 
 void Unit_Init(Unit* unit)
 {
-	unit->visionrange = 100;
-	unit->visionradians = PI;
+	unit->visionrange = 1000;
+	unit->visionradianscos = cos(PI/2);
 	unit->attacktimer = 0;
 	unit->attackspeed = 1;
 	unit->attackdamage = 1;
 	unit->maxattackrange = 200;
 	unit->baseattackrange = 100;
-	unit->attackrangeheightcoeff = 1;
+	unit->attackrangeheightcoeff = 5;
 	unit->pathweight = 1;
 	unit->fireweight = 0.5;
 	unit->pathsearchradius = 64;
+	unit->offenselambda = 1;
+	unit->defenselambda = 0.5;
 	unit->offenseweight = 100;
-	unit->defenseweight = 0;
+	unit->defenseweight = -1;
+	unit->pathingtimer = 0;
+	unit->aggrotimer = 0;
+	unit->aggrospeed = 4;
 	unit->pathpoints = NULL;
 	unit->aimvec = (Point) { 1, 0, 0 };
 	unit->pathingpoint = (Point) { 0, 0, 0 };
@@ -24,6 +29,7 @@ void Unit_Init(Unit* unit)
 	unit->collision.hulltype = CHType_Circle;
 	unit->collision.circleRadius = 10;
 	unit->collision.polygon = NULL;
+	unit->attacktarget = NULL;
 }
 Unit* Unit_Create(int flags, Point* pos, Point* dim, char* path)
 {
@@ -81,6 +87,7 @@ void Unit_Draw(SDL_Renderer* renderer, Unit* unit, Camera* camera)
 		//SDL_RenderDrawLine(renderer, elementscreenspace.x, elementscreenspace.y, screenspace.x, screenspace.y);
 	}
 	*/
+	/*
 	Point screenspace, elementscreenspace;
 	SDL_Rect dstrect;
 	Camera_MapToScreen(&screenspace, camera, &unit->pathingpoint); //top down view
@@ -92,33 +99,105 @@ void Unit_Draw(SDL_Renderer* renderer, Unit* unit, Camera* camera)
 	SDL_SetTextureAlphaMod(dfieldtexture, 255);
 	SDL_SetTextureColorMod(dfieldtexture, 0, 255, 0);
 	SDL_RenderCopy(renderer, dfieldtexture, NULL, &dstrect);
+	*/
+	Point enemyscreenspace, elementscreenspace;
+	
+	Camera_MapToScreen(&elementscreenspace, camera, &unit->gameelement->pos);
+	if (unit->attacktarget)
+	{
+		Camera_MapToScreen(&enemyscreenspace, camera, &unit->attacktarget->gameelement->pos); //top down view
+		switch (unit->gameelement->team) {
+		case GETeam_A:
+			SDL_SetRenderDrawColor(renderer, 10, 170, 0, 100);
+			break;
+		case GETeam_B:
+			SDL_SetRenderDrawColor(renderer, 170, 80, 0, 100);
+			break;
+		}
+		SDL_RenderDrawLine(renderer, elementscreenspace.x, elementscreenspace.y, enemyscreenspace.x, enemyscreenspace.y);
+	}
 	
 	GameElement_Draw(renderer, unit->gameelement, camera);
-	SDL_RenderDrawLine(renderer, elementscreenspace.x, elementscreenspace.y, screenspace.x, screenspace.y);
+	if (unit->gameelement->hp < unit->gameelement->maxhp && unit->gameelement->alive)
+	{
+		Unit_DrawHP(renderer, unit, camera);
+	}
+	//SDL_RenderDrawLine(renderer, elementscreenspace.x, elementscreenspace.y, screenspace.x, screenspace.y);
+}
+void Unit_DrawHP(SDL_Renderer* renderer, Unit* unit, Camera* camera)
+{
+	Point hpbarp1, hpbarp2;
+	int i;
+	//mapspace
+	Point_Add(&hpbarp1, &unit->gameelement->pos, &(Point){-UNIT_HP_BAR_WIDTH / 2 * unit->gameelement->hp / unit->gameelement->maxhp, UNIT_HP_BAR_OFFSET, 0});
+	Point_Add(&hpbarp2, &unit->gameelement->pos, &(Point){UNIT_HP_BAR_WIDTH / 2 * unit->gameelement->hp / unit->gameelement->maxhp, UNIT_HP_BAR_OFFSET, 0});
+	//transition to screenspace
+	Camera_MapToScreen(&hpbarp1, camera, &hpbarp1);
+	Camera_MapToScreen(&hpbarp2, camera, &hpbarp2);
+	switch (unit->gameelement->team) {
+	case GETeam_A:
+		SDL_SetRenderDrawColor(renderer, 10, 170, 0, 100);
+		break;
+	case GETeam_B:
+		SDL_SetRenderDrawColor(renderer, 170, 80, 0, 100);
+		break;
+	}
+	
+	for (i = 0; i < UNIT_HP_BAR_HEIGHT * camera->scale; i++)
+	{
+		SDL_RenderDrawLine(renderer, hpbarp1.x, hpbarp1.y + i, hpbarp2.x, hpbarp2.y + i);
+	}
 }
 void Unit_Update(Unit* unit, double frametime)
 {
 	Unit_UpdateMove(unit, frametime);
 	GameElement_Update(unit->gameelement, frametime);
-	while (unit->gameelement->thinktimer >= 1)
+	if (unit->gameelement->alive)
 	{
-		Unit_Think(unit);
-		unit->gameelement->thinktimer -= 1;
+		while (unit->gameelement->thinktimer >= 1)
+		{
+			Unit_Think(unit);
+			unit->gameelement->thinktimer -= 1;
+		}
+		if (unit->aggrotimer >= 1)
+		{
+			unit->aggrotimer = 0;
+		}
+		unit->aggrotimer += frametime * unit->aggrospeed; //this order is intentional to allow map to see if the unit needs to aggro
+		if (unit->attacktarget)
+		{
+			unit->attacktarget->gameelement->hp -= frametime;
+		}
+		if (!Point_IsEqual(&unit->gameelement->movevec, &(Point){0, 0, 0}))
+		{
+			Point_Copy(&unit->aimvec, &unit->gameelement->movevec);
+		}
+		unit->pathingtimer += frametime;
 	}
-	Point_Copy(&unit->aimvec, &unit->gameelement->movevec);
+	else
+	{
+		unit->gameelement->frame = 2;
+	}
 }
 void Unit_UpdateMove(Unit* unit, double frametime)
 {
-	Point_Subtract(&unit->gameelement->movevec, &unit->pathingpoint, &unit->gameelement->pos);
-	unit->gameelement->movevec.z = 0; //make 2d
-	Point_Normalize(&unit->gameelement->movevec, &unit->gameelement->movevec);
+	if (!unit->gameelement->alive || unit->attacktarget)
+	{
+		unit->gameelement->movevec = (Point) { 0, 0, 0 };
+	}
+	else
+	{
+		Point_Subtract(&unit->gameelement->movevec, &unit->pathingpoint, &unit->gameelement->pos);
+		unit->gameelement->movevec.z = 0; //make 2d
+		Point_Normalize(&unit->gameelement->movevec, &unit->gameelement->movevec);
+	}
+	
+	//unit->gameelement->movevec = (Point){ 1, 0, 0 };
 }
 void Unit_Think(Unit* unit)
 {
 	
 }
-void Unit_UpdateTarget(Unit* unit, double frametime, NodeList* unitlist);
-void Unit_AcquireTarget(Unit* unit, NodeList* unitlist);
 BOOLEAN Unit_PointIsInVision(Unit* unit, Point* mapspace)
 {
 	Point vec;
@@ -131,5 +210,19 @@ BOOLEAN Unit_PointIsInVision(Unit* unit, Point* mapspace)
 	vec.z = 0;//make 2d
 	Point_Normalize(&vec, &vec);
 	Point_Dot(&dot, &unit->aimvec, &vec);
-	return cos(unit->visionradians / 2) < dot ? TRUE : FALSE;
+	return unit->visionradianscos < dot ? TRUE : FALSE;
+}
+BOOLEAN Unit_PointIsInAttackRange(Unit* unit, Point* mapspace)
+{
+	double distance = Point_Length2D(&unit->gameelement->pos, mapspace);
+	if (distance > unit->maxattackrange)
+	{
+		return FALSE;
+	}
+	double heightdiff = mapspace->z - unit->gameelement->pos.z;
+	if (distance > unit->baseattackrange - heightdiff * unit->attackrangeheightcoeff)
+	{
+		return FALSE;
+	}
+	return TRUE;
 }
